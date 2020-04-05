@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Fair</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        
+        .container {
+            width: 100%;
+            height: 100%;
+            padding-top: 100px;
+            text-align: center;
+        }
+
+        .small-image {
+            z-index: -10;
+        }
+
+        .scope-container {
+            position: absolute;
+            z-index: 10;
+            cursor: none;
+        }
+
+        .scope-img {
+            cursor: none;
+            pointer-events: none;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+        }
+
+        .scope {
+            background-image: url(https://c0d3.com/challenges/assets/fair/big.jpg);
+            background-repeat: no-repeat;
+            border-radius: 50%;
+            overflow: hidden;
+            position: absolute;
+            top: 1px;
+            left: 1px;
+            right: 1px;
+            bottom: 1px;
+            z-index: -10;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img class="small-image" src="https://c0d3.com/challenges/assets/fair/small.jpg" alt="Google gair small">
+    </div>
+    <script>
+        (() => {
+            const $ = document.querySelector.bind(document);
+
+            function Scope(size) {
+                this.size = size;
+                this.position = { top: 0, left: 0 };
+                this.backgroundPosition = '0 0';
+                this.imgSrc = `https://c0d3.com/challenges/assets/fair/scope.png`;
+                this.rendered = false;
+            }
+
+            Scope.prototype.styles = function() {
+                return Object.keys(this.styleSheet).map((key) => {
+                    return `${key}: ${this.styleSheet[key]};`;
+                }).join('');
+            };
+
+            Scope.prototype.getPosition = function() {
+                const pos = this.position;
+                return Object.keys(pos).map((p) => `${p}: ${pos[p]}px;`).join('');
+            };
+
+            Scope.prototype.getSize = function() {
+                return `width: ${this.size}px; height: ${this.size}px`;
+            };
+
+            Scope.prototype.setBackgroundPosition = function(pos) {
+                if (pos && pos.x && pos.y) {
+                    const OFFSET_Y = ((pos.y * 100) * 0.1) / 100;
+                    const x100 = (pos.x) * 100;
+                    const y100 = (pos.y + OFFSET_Y) * 100;
+                    this.backgroundPosition = `${x100}% ${y100}%`;
+                }
+            };
+
+            Scope.prototype.setPosition = function(pos) {
+                const OFFSET = this.size / 2;
+                const res = Object.keys(pos).map((p) => {
+                    this.position[p] = pos[p] - OFFSET;
+                });
+            };
+
+            Scope.prototype.render = function($parent) {
+                $parent.append(this.create());
+                this.rendered = true;
+            };
+
+            Scope.prototype.updateEl = function() {
+                if (this.rendered) {
+                    const $container = $('.scope-container');
+                    const $scope = $('.scope');
+
+                    $container.style.top = this.position.top + 'px';
+                    $container.style.left = this.position.left + 'px';
+                    $scope.style.backgroundPosition = this.backgroundPosition;
+                }
+            };
+
+            Scope.prototype.create = function() {
+                if (!this.rendered) {
+                    let $div = document.createElement('div');
+                    $div.innerHTML = this.html().trim();
+                    return $div.firstChild;
+                }
+                return this.el();
+            };
+
+            Scope.prototype.destroy = function() {
+                const $container = $('.scope-container');
+                const $parent = $container.parentNode;
+                $parent.removeChild($container);
+                this.rendered = false;
+            };
+
+            Scope.prototype.html = function() {
+                return `
+                    <div class="scope-container" style="${this.getPosition()} ${this.getSize()}">
+                        <img class="scope-img" src="${this.imgSrc}" alt="Scope">
+                        <div class="scope" style="background-position: ${this.backgroundPosition}"></div>
+                    </div>
+                `;
+            };
+
+            window.onload = () => {
+                const scope = new Scope(200);
+                const $smallImage = $('.small-image');
+
+                document.addEventListener('mousemove', (event) => {
+                    const { clientX, clientY } = event;
+
+                    const imageBounds = $smallImage.getBoundingClientRect();
+                    const xper = (clientX - imageBounds.x) / imageBounds.width;
+                    const yper = (clientY - imageBounds.y) / imageBounds.height;
+                    
+                    const inBounds = () => {
+                        const OFFSET = 0.1;
+                        const BOTTOM_OFFSET = 0.1;
+                        const TOP_OFFSET = 0.15;
+                        return (((xper + OFFSET) > 0 && (xper - OFFSET) < 1) && 
+                                ((yper + TOP_OFFSET) > 0 && (yper - BOTTOM_OFFSET) < 1));
+                    };
+
+                    if (inBounds()) {
+                        if (!scope.rendered) {
+                            scope.setPosition({ left: clientX, top: clientY });
+                            scope.setBackgroundPosition({ x: xper, y: yper });
+                            scope.render(document.body);
+                        } else {
+                            console.log('update');
+                            scope.setBackgroundPosition({ x: xper, y: yper });
+                            scope.setPosition({ left: clientX, top: clientY });
+                            scope.updateEl();
+                        }
+                    } else {
+                        if (scope.rendered) {
+                            scope.destroy();
+                        }
+                    }
+                    
+                });
+            };
+        })();
+    </script>
+</body>
+</html>
