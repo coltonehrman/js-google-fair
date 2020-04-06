@@ -152,11 +152,15 @@
                     const yper = (clientY - imageBounds.y) / imageBounds.height;
                     
                     const inBounds = () => {
-                        const OFFSET = 0.1;
-                        const BOTTOM_OFFSET = 0.1;
-                        const TOP_OFFSET = 0.15;
+                        const OFFSET = 0.15;
+                        if ((xper < 0.3 && yper < 0) || (xper > 0.75 && yper < 0))
+                            return false;
+                        if (xper > 0.4 && xper < 0.65 && yper > -0.35 && yper < 1)
+                            return true;
+                        if (xper > 0.5 && xper < 0.8 && yper > 0 && yper < 1.25)
+                            return true;
                         return (((xper + OFFSET) > 0 && (xper - OFFSET) < 1) && 
-                                ((yper + TOP_OFFSET) > 0 && (yper - BOTTOM_OFFSET) < 1));
+                                ((yper + OFFSET) > 0 && (yper - OFFSET) < 1));
                     };
 
                     if (inBounds()) {
